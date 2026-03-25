@@ -2,36 +2,138 @@
 <html>
 <head>
     <title>Employee Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e6f3ff;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #007bff;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #cancelBtn {
+            margin-left: 10px;
+        }
+        #cancelBtn:hover {
+            background-color: #545b62;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .edit-btn {
+            background-color: #ffc107;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .edit-btn:hover {
+            background-color: #e0a800;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h2>Add Employee</h2>
+        <div class="form-group">
+            <input id="firstName" placeholder="First Name" type="text">
+        </div>
+        <div class="form-group">
+            <input id="lastName" placeholder="Last Name" type="text">
+        </div>
+        <div class="form-group">
+            <input id="email" placeholder="Email" type="email">
+        </div>
+        <div class="form-group">
+            <input id="department" placeholder="Department" type="text">
+        </div>
+        <div class="form-group">
+            <input id="salary" placeholder="Salary" type="number" step="0.01">
+        </div>
+        <button id="submitBtn" onclick="addEmployee()">Add Employee</button>
+        <button id="cancelBtn" onclick="cancelEdit()" style="display: none; background-color: #6c757d;">Cancel</button>
 
-<h2>Add Employee</h2>
-
-<input id="firstName" placeholder="First Name">
-<input id="lastName" placeholder="Last Name">
-<input id="email" placeholder="Email">
-<input id="department" placeholder="Department">
-<input id="salary" placeholder="Salary">
-
-<button onclick="addEmployee()">Add</button>
-
-<h2>Employees</h2>
-<table border="1" id="table"></table>
+        <h2>Employees</h2>
+        <table id="table"></table>
+    </div>
 
 <script>
 const API = "/api/employees";
+let editingId = null;
 
 function loadEmployees() {
     fetch(API)
     .then(res => res.json())
     .then(data => {
-        let table = "<tr><th>ID</th><th>Name</th><th>Actions</th></tr>";
+        let table = "<tr><th>ID</th><th>Name</th><th>Email</th><th>Department</th><th>Salary</th><th>Actions</th></tr>";
         data.forEach(e => {
             table += `<tr>
                 <td>${e.id}</td>
                 <td>${e.firstName} ${e.lastName}</td>
+                <td>${e.email}</td>
+                <td>${e.department}</td>
+                <td>${e.salary}</td>
                 <td>
-                    <button onclick="deleteEmp(${e.id})">Delete</button>
+                    <button class="edit-btn" onclick="editEmp(${e.id}, '${e.firstName}', '${e.lastName}', '${e.email}', '${e.department}', ${e.salary})">Edit</button>
+                    <button class="delete-btn" onclick="deleteEmp(${e.id})">Delete</button>
                 </td>
             </tr>`;
         });
@@ -39,23 +141,81 @@ function loadEmployees() {
     });
 }
 
+function editEmp(id, firstName, lastName, email, department, salary) {
+    editingId = id;
+    document.getElementById("firstName").value = firstName;
+    document.getElementById("lastName").value = lastName;
+    document.getElementById("email").value = email;
+    document.getElementById("department").value = department;
+    document.getElementById("salary").value = salary;
+    document.getElementById("submitBtn").textContent = "Update Employee";
+    document.getElementById("cancelBtn").style.display = "inline-block";
+}
+
+function cancelEdit() {
+    editingId = null;
+    document.getElementById("firstName").value = "";
+    document.getElementById("lastName").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("department").value = "";
+    document.getElementById("salary").value = "";
+    document.getElementById("submitBtn").textContent = "Add Employee";
+    document.getElementById("cancelBtn").style.display = "none";
+}
+
 function addEmployee() {
-    fetch(API, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            firstName: firstName.value,
-            lastName: lastName.value,
-            email: email.value,
-            department: department.value,
-            salary: salary.value
-        })
-    }).then(() => loadEmployees());
+    const firstName = document.getElementById("firstName").value;
+    const lastName = document.getElementById("lastName").value;
+    const email = document.getElementById("email").value;
+    const department = document.getElementById("department").value;
+    const salary = document.getElementById("salary").value;
+
+    if (!firstName || !lastName || !email || !department || !salary) {
+        alert("Please fill in all fields");
+        return;
+    }
+
+    const employeeData = {
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        department: department,
+        salary: parseFloat(salary)
+    };
+
+    if (editingId) {
+        // Update
+        fetch(`${API}/${editingId}`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(employeeData)
+        }).then(() => {
+            loadEmployees();
+            cancelEdit();
+        });
+    } else {
+        // Create
+        fetch(API, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(employeeData)
+        }).then(() => {
+            loadEmployees();
+            // Clear form
+            document.getElementById("firstName").value = "";
+            document.getElementById("lastName").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("department").value = "";
+            document.getElementById("salary").value = "";
+        });
+    }
 }
 
 function deleteEmp(id) {
-    fetch(API + "/" + id, { method: "DELETE" })
-    .then(() => loadEmployees());
+    if (confirm("Are you sure you want to delete this employee?")) {
+        fetch(API + "/" + id, { method: "DELETE" })
+        .then(() => loadEmployees());
+    }
 }
 
 loadEmployees();
