@@ -85,8 +85,14 @@
             cursor: pointer;
             margin-right: 5px;
         }
-        .edit-btn:hover {
-            background-color: #e0a800;
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        input.error {
+            border-color: #dc3545;
         }
     </style>
 </head>
@@ -95,18 +101,23 @@
         <h2>Add Employee</h2>
         <div class="form-group">
             <input id="firstName" placeholder="First Name" type="text">
+            <div id="firstNameError" class="error-message"></div>
         </div>
         <div class="form-group">
             <input id="lastName" placeholder="Last Name" type="text">
+            <div id="lastNameError" class="error-message"></div>
         </div>
         <div class="form-group">
             <input id="email" placeholder="Email" type="email">
+            <div id="emailError" class="error-message"></div>
         </div>
         <div class="form-group">
             <input id="department" placeholder="Department" type="text">
+            <div id="departmentError" class="error-message"></div>
         </div>
         <div class="form-group">
             <input id="salary" placeholder="Salary" type="number" step="0.01">
+            <div id="salaryError" class="error-message"></div>
         </div>
         <button id="submitBtn" onclick="addEmployee()">Add Employee</button>
         <button id="cancelBtn" onclick="cancelEdit()" style="display: none; background-color: #6c757d;">Cancel</button>
@@ -154,6 +165,7 @@ function editEmp(id, firstName, lastName, email, department, salary) {
 
 function cancelEdit() {
     editingId = null;
+    clearAllErrors();
     document.getElementById("firstName").value = "";
     document.getElementById("lastName").value = "";
     document.getElementById("email").value = "";
@@ -164,14 +176,70 @@ function cancelEdit() {
 }
 
 function addEmployee() {
-    const firstName = document.getElementById("firstName").value;
-    const lastName = document.getElementById("lastName").value;
-    const email = document.getElementById("email").value;
-    const department = document.getElementById("department").value;
+    clearAllErrors();
+
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const department = document.getElementById("department").value.trim();
     const salary = document.getElementById("salary").value;
 
-    if (!firstName || !lastName || !email || !department || !salary) {
-        alert("Please fill in all fields");
+    let hasErrors = false;
+
+    // Validation
+    if (!firstName) {
+        showError('firstName', 'First name is required');
+        hasErrors = true;
+    } else if (firstName.length < 2) {
+        showError('firstName', 'First name must be at least 2 characters long');
+        hasErrors = true;
+    } else if (!/^[a-zA-Z\s\-']+$/.test(firstName)) {
+        showError('firstName', 'First name can only contain letters, spaces, hyphens, and apostrophes');
+        hasErrors = true;
+    }
+
+    if (!lastName) {
+        showError('lastName', 'Last name is required');
+        hasErrors = true;
+    } else if (lastName.length < 2) {
+        showError('lastName', 'Last name must be at least 2 characters long');
+        hasErrors = true;
+    } else if (!/^[a-zA-Z\s\-']+$/.test(lastName)) {
+        showError('lastName', 'Last name can only contain letters, spaces, hyphens, and apostrophes');
+        hasErrors = true;
+    }
+
+    if (!email) {
+        showError('email', 'Email is required');
+        hasErrors = true;
+    } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showError('email', 'Please enter a valid email address');
+            hasErrors = true;
+        }
+    }
+
+    if (!department) {
+        showError('department', 'Department is required');
+        hasErrors = true;
+    } else if (department.length < 2) {
+        showError('department', 'Department must be at least 2 characters long');
+        hasErrors = true;
+    } else if (!/^[a-zA-Z\s&\-]+$/.test(department)) {
+        showError('department', 'Department can only contain letters, spaces, ampersands, and hyphens');
+        hasErrors = true;
+    }
+
+    if (!salary || salary <= 0) {
+        showError('salary', 'Salary must be a positive number');
+        hasErrors = true;
+    } else if (salary > 1000000) {
+        showError('salary', 'Salary cannot exceed $1,000,000');
+        hasErrors = true;
+    }
+
+    if (hasErrors) {
         return;
     }
 
@@ -218,8 +286,33 @@ function deleteEmp(id) {
     }
 }
 
-loadEmployees();
-</script>
+function showError(fieldId, message) {
+    const input = document.getElementById(fieldId);
+    const errorDiv = document.getElementById(fieldId + 'Error');
+    input.classList.add('error');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
 
-</body>
-</html>
+function clearError(fieldId) {
+    const input = document.getElementById(fieldId);
+    const errorDiv = document.getElementById(fieldId + 'Error');
+    input.classList.remove('error');
+    errorDiv.style.display = 'none';
+}
+
+function clearAllErrors() {
+    const fields = ['firstName', 'lastName', 'email', 'department', 'salary'];
+    fields.forEach(field => clearError(field));
+}
+
+loadEmployees();
+
+// Add input event listeners to clear errors as user types
+document.getElementById('firstName').addEventListener('input', () => clearError('firstName'));
+document.getElementById('lastName').addEventListener('input', () => clearError('lastName'));
+document.getElementById('email').addEventListener('input', () => clearError('email'));
+document.getElementById('department').addEventListener('input', () => clearError('department'));
+document.getElementById('salary').addEventListener('input', () => clearError('salary'));
+
+</script>
