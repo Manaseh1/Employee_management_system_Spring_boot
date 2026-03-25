@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Manager</title>
+</head>
+<body>
+
+<h2>Add Employee</h2>
+
+<input id="firstName" placeholder="First Name">
+<input id="lastName" placeholder="Last Name">
+<input id="email" placeholder="Email">
+<input id="department" placeholder="Department">
+<input id="salary" placeholder="Salary">
+
+<button onclick="addEmployee()">Add</button>
+
+<h2>Employees</h2>
+<table border="1" id="table"></table>
+
+<script>
+const API = "/api/employees";
+
+function loadEmployees() {
+    fetch(API)
+    .then(res => res.json())
+    .then(data => {
+        let table = "<tr><th>ID</th><th>Name</th><th>Actions</th></tr>";
+        data.forEach(e => {
+            table += `<tr>
+                <td>${e.id}</td>
+                <td>${e.firstName} ${e.lastName}</td>
+                <td>
+                    <button onclick="deleteEmp(${e.id})">Delete</button>
+                </td>
+            </tr>`;
+        });
+        document.getElementById("table").innerHTML = table;
+    });
+}
+
+function addEmployee() {
+    fetch(API, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            firstName: firstName.value,
+            lastName: lastName.value,
+            email: email.value,
+            department: department.value,
+            salary: salary.value
+        })
+    }).then(() => loadEmployees());
+}
+
+function deleteEmp(id) {
+    fetch(API + "/" + id, { method: "DELETE" })
+    .then(() => loadEmployees());
+}
+
+loadEmployees();
+</script>
+
+</body>
+</html>
